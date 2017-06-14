@@ -1,3 +1,4 @@
+import code
 import sys
 import os
 import json
@@ -5,26 +6,40 @@ from pprint import pprint
 import numpy as np
 
 def getDistance(x1_coords,y1_coords,z1_coords,x2_coords,y2_coords,z2_coords):
-    p1 = np.array([x1_coords, y1_coords, z1_coords])
-    p2 = np.array([x2_coords, y2_coords, z2_coords])
-    squared_dist = np.sum(p1**2 + p2**2, axis=0)
-    dist = np.sqrt(squared_dist)
-    return dist
+	squared_dist = np.sum((x1_coords - x2_coords)**2 + (y1_coords-y2_coords)**2 + (z1_coords-z2_coords)**2)
+	dist = np.sqrt(squared_dist)
+	return dist
 
-with open('Training1-Condition2.json') as data_file:    
-    truthData = json.load(data_file)
+with open('Training1-Condition2.json') as data_file:	
+	truthData = json.load(data_file)
 
 with open('Test1-Pete-DAPI-Map2-Aldh1l1-Sox10.json') as data_file:
-    testData = json.load(data_file)
+	testData = json.load(data_file)
 	
 truthPts = truthData["countingPoints"]
 testPts = testData["countingPoints"]
 
-x1 = truthPts[0]["x"]
-y1 = truthPts[0]["y"]
-z1 = truthPts[0]["z"]
-x2 = testPts[0]["x"]
-y2 = testPts[0]["y"]
-z2 = testPts[0]["z"]
+pairs = []
 
-print(getDistance(x1,y1,z1,x2,y2,z2))
+for testPt in testPts:
+	distances = []
+	for pt in truthPts:
+		dist = getDistance(testPt["x"],testPt["y"],testPt["z"],pt["x"],pt["y"],pt["z"])
+		
+		distances.append(dist)
+
+	minDist = min(distances)
+	pairPt = truthPts[distances.index(minDist)]
+	pair = (testPt,pairPt)
+	pairs.append(pair)
+
+pprint(pairs)
+
+correctCt = 0
+
+for pair in pairs:
+	if(pair[0]["color"]==pair[1]["color"]):
+		correctCt+=1
+
+print correctCt
+print len(pairs)
